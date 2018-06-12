@@ -126,7 +126,7 @@ def _scans_tsv(raw, raw_fname, fname, verbose):
                                               'acq_time': [acq_time]}))
     else:
         df = pd.DataFrame({'filename': ['%s' % raw_fname],
-                       'acq_time': [acq_time]})
+                           'acq_time': [acq_time]})
 
     df.to_csv(fname, sep='\t', index=False)
 

@@ -3,7 +3,6 @@ import os
 import errno
 from collections import OrderedDict
 import json
-import shutil as sh
 from mne.externals.six import string_types
 from .config import BIDS_VERSION
 
@@ -15,7 +14,7 @@ def _mkdir_p(path, verbose=False):
     """
 
     try:
-        os.makedirs(path)       # for Python >3.2 we can simply use os.makedirs(path, exists_ok=True)
+        os.makedirs(path)
         if verbose is True:
             print('Creating folder: %s' % path)
     except OSError as exc:  # Python >2.5
