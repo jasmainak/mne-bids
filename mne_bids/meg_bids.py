@@ -152,7 +152,7 @@ def _coordsystem_json(raw, unit, orient, manufacturer, fname, verbose):
         err = 'All HPI and Fiducials must be in the same coordinate frame.'
         raise ValueError(err)
 
-    fid_json = {'MEGCoordinateSystem': manufacturer,
+    fid_json = {'MEGCoordinateSystem': orient,
                 'MEGCoordinateUnits': unit,  # XXX validate this
                 'HeadCoilCoordinates': coords,
                 'HeadCoilCoordinateSystem': orient,
@@ -228,9 +228,9 @@ def _channel_json(raw, task, manufacturer, fname, kind, verbose):
 
 
 def raw_to_bids(subject_id, task, raw_file, output_path, session_id=None,
-                run=None, kind='meg', events_data=None, event_id=None,
-                hpi=None, electrode=None, hsp=None, config=None,
-                overwrite=True, verbose=True):
+                acquisition=None, run=None, kind='meg', events_data=None,
+                event_id=None, hpi=None, electrode=None, hsp=None, config=None,
+                overwrite=False, verbose=True):
     """Walk over a folder of files and create bids compatible folder.
 
     Parameters
@@ -246,6 +246,8 @@ def raw_to_bids(subject_id, task, raw_file, output_path, session_id=None,
         The path of the BIDS compatible folder
     session_id : str | None
         The session name in BIDS compatible format.
+    acquisition : str | None
+        The acquisition data identifier
     run : int | None
         The run number for this dataset.
     kind : str, one of ('meg', 'ieeg')
@@ -310,20 +312,20 @@ def raw_to_bids(subject_id, task, raw_file, output_path, session_id=None,
         prefix=ses_path)
 
     coordsystem_fname = make_bids_filename(
-        subject=subject_id, session=session_id,
+        subject=subject_id, session=session_id, acquisition=acquisition,
         suffix='coordsystem.json', prefix=data_path)
     data_meta_fname = make_bids_filename(
-        subject=subject_id, session=session_id,
-        suffix='%s.json' % kind, prefix=data_path)
+        subject=subject_id, session=session_id, task=task, run=run,
+        acquisition=acquisition, suffix='%s.json' % kind, prefix=data_path)
     raw_file_bids = make_bids_filename(
         subject=subject_id, session=session_id, task=task, run=run,
-        suffix='%s%s' % (kind, ext), prefix=data_path)
+        acquisition=acquisition, suffix='%s%s' % (kind, ext), prefix=data_path)
     events_tsv_fname = make_bids_filename(
         subject=subject_id, session=session_id, task=task,
         run=run, suffix='events.tsv', prefix=data_path)
     channels_fname = make_bids_filename(
         subject=subject_id, session=session_id, task=task, run=run,
-        suffix='channels.tsv', prefix=data_path)
+        acquisition=acquisition, suffix='channels.tsv', prefix=data_path)
 
     # Read in Raw object and extract metadata from Raw object if needed
     if kind == 'meg':
@@ -362,6 +364,12 @@ def raw_to_bids(subject_id, task, raw_file, output_path, session_id=None,
             else:
                 raise ValueError('"%s" already exists. Please set overwrite to'
                                  ' True.' % raw_file_bids)
+        else:
+            # ensure the sub-folder exists
+            if not os.path.exists(os.path.dirname(raw_file_bids)):
+                os.makedirs(os.path.dirname(raw_file_bids))
+            # copy the file
+            sh.copyfile(raw.filenames[0], raw_file_bids)    
 
     return output_path
 

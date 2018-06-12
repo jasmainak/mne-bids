@@ -8,18 +8,14 @@ from mne.externals.six import string_types
 from .config import BIDS_VERSION
 
 
-def _mkdir_p(path, overwrite=False, verbose=False):
+def _mkdir_p(path, verbose=False):
     """Create a directory, making parent directories as needed.
 
     From stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     """
-    if overwrite is True and os.path.isdir(path):
-        sh.rmtree(path)
-        if verbose is True:
-            print('Overwriting path: %s' % path)
 
     try:
-        os.makedirs(path)
+        os.makedirs(path)       # for Python >3.2 we can simply use os.makedirs(path, exists_ok=True)
         if verbose is True:
             print('Creating folder: %s' % path)
     except OSError as exc:  # Python >2.5
@@ -163,7 +159,7 @@ def make_bids_folders(subject, session=None, kind=None, root=None,
         path = os.path.join(root, path)
 
     if make_dir is True:
-        _mkdir_p(path, overwrite=overwrite, verbose=verbose)
+        _mkdir_p(path, verbose=verbose)
     return path
 
 
