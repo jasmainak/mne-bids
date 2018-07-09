@@ -96,14 +96,14 @@ def test_kit():
     raw_to_bids(subject_id=subject_id, session_id=session_id, run=run,
                 task=task, raw_file=raw_fname, events_data=events_fname,
                 event_id=event_id, hpi=hpi_fname, electrode=electrode_fname,
-                hsp=headshape_fname, output_path=output_path, acquisition=acq_a,
-                overwrite=True)
+                hsp=headshape_fname, output_path=output_path,
+                acquisition=acq_a, overwrite=True)
     # run again with a different acquisiton parameter
     raw_to_bids(subject_id=subject_id, session_id=session_id, run=run,
                 task=task, raw_file=raw_fname, events_data=events_fname,
                 event_id=event_id, hpi=hpi_fname, electrode=electrode_fname,
-                hsp=headshape_fname, output_path=output_path, acquisition=acq_b,
-                overwrite=True)
+                hsp=headshape_fname, output_path=output_path,
+                acquisition=acq_b, overwrite=True)
     cmd = ['bids-validator', output_path]
     run_subprocess(cmd, shell=shell)
 

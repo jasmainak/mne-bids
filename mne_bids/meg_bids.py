@@ -149,7 +149,8 @@ def _scans_tsv(raw, raw_fname, fname, verbose):
     return fname
 
 
-def _coordsystem_json(raw, unit, orient, manufacturer, fname, verbose, overwrite):
+def _coordsystem_json(raw, unit, orient, manufacturer, fname, verbose,
+                      overwrite):
     dig = raw.info['dig']
     coords = dict()
     fids = {d['ident']: d for d in dig if d['kind'] ==
@@ -371,12 +372,14 @@ def raw_to_bids(subject_id, task, raw_file, output_path, session_id=None,
 
     make_dataset_description(output_path, name=" ",
                              verbose=verbose)
-    _channel_json(raw, task, manufacturer, data_meta_fname, kind, verbose, overwrite)
+    _channel_json(raw, task, manufacturer, data_meta_fname, kind, verbose,
+                  overwrite)
     _channels_tsv(raw, channels_fname, verbose, overwrite)
 
     events = _read_events(events_data, raw)
     if len(events) > 0:
-        _events_tsv(events, raw, events_tsv_fname, event_id, verbose, overwrite)
+        _events_tsv(events, raw, events_tsv_fname, event_id, verbose,
+                    overwrite)
 
     # for FIF, we need to re-save the file to fix the file pointer
     # for files with multiple parts
