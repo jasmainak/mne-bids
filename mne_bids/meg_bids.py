@@ -37,7 +37,7 @@ manufacturers = {'.sqd': 'KIT/Yokogawa', '.con': 'KIT/Yokogawa',
                  '.ds': 'CTF'}
 
 
-def _channels_tsv(raw, fname, verbose):
+def _channels_tsv(raw, fname, verbose, overwrite):
     """Create channel tsv."""
     map_chs = defaultdict(lambda: 'OTHER')
     map_chs.update(grad='MEGGRAD', mag='MEGMAG', stim='TRIG', eeg='EEG',
@@ -72,7 +72,11 @@ def _channels_tsv(raw, fname, verbose):
                       ('low_cutoff', ['%.2f' % low_cutoff] * n_channels),
                       ('high_cutoff', ['%.2f' % high_cutoff] * n_channels),
                       ('status', status)]))
-    df.to_csv(fname, sep='\t', index=False)
+    if not os.path.exists(fname) or overwrite is True:
+        df.to_csv(fname, sep='\t', index=False)
+    else:
+        raise ValueError('"%s" already exists. Please set overwrite to'
+                         ' True.' % fname)
 
     if verbose:
         print(os.linesep + "Writing '%s'..." % fname + os.linesep)
@@ -81,7 +85,7 @@ def _channels_tsv(raw, fname, verbose):
     return fname
 
 
-def _events_tsv(events, raw, fname, event_id, verbose):
+def _events_tsv(events, raw, fname, event_id, verbose, overwrite):
     """Create tsv file for events."""
 
     first_samp = raw.first_samp
@@ -96,7 +100,11 @@ def _events_tsv(events, raw, fname, event_id, verbose):
         df.condition = df.condition.map(event_id_map)
     df.onset /= sfreq
     df = df.fillna('n/a')
-    df.to_csv(fname, sep='\t', index=False)
+    if not os.path.exists(fname) or overwrite is True:
+        df.to_csv(fname, sep='\t', index=False)
+    else:
+        raise ValueError('"%s" already exists. Please set overwrite to'
+                         ' True.' % fname)
     if verbose:
         print(os.linesep + "Writing '%s'..." % fname + os.linesep)
         print(df.head())
@@ -121,12 +129,16 @@ def _scans_tsv(raw, raw_fname, fname, verbose):
     # If it does we will want to determine whether or not the data
     # is already there, and if not append it.
     if os.path.exists(fname):
-        existing_df = pd.read_csv(fname, sep='\t')
-        df = existing_df.append(pd.DataFrame({'filename': ['%s' % raw_fname],
-                                              'acq_time': [acq_time]}))
+        df = pd.read_csv(fname, sep='\t')
+        df = df.append(pd.DataFrame(data={'filename': ['%s' % raw_fname],
+                                          'acq_time': [acq_time]},
+                                    columns=['filename', 'acq_time']))
+        df = df.drop_duplicates()
+        df.sort_values(by='acq_time')
     else:
-        df = pd.DataFrame({'filename': ['%s' % raw_fname],
-                           'acq_time': [acq_time]})
+        df = pd.DataFrame(data={'filename': ['%s' % raw_fname],
+                                'acq_time': [acq_time]},
+                          columns=['filename', 'acq_time'])
 
     df.to_csv(fname, sep='\t', index=False)
 
@@ -137,7 +149,7 @@ def _scans_tsv(raw, raw_fname, fname, verbose):
     return fname
 
 
-def _coordsystem_json(raw, unit, orient, manufacturer, fname, verbose):
+def _coordsystem_json(raw, unit, orient, manufacturer, fname, verbose, overwrite):
     dig = raw.info['dig']
     coords = dict()
     fids = {d['ident']: d for d in dig if d['kind'] ==
@@ -166,12 +178,16 @@ def _coordsystem_json(raw, unit, orient, manufacturer, fname, verbose):
                 'HeadCoilCoordinateSystem': orient,
                 'HeadCoilCoordinateUnits': unit  # XXX validate this
                 }
-    _write_json(fid_json, fname)
+    if not os.path.exists(fname) or overwrite is True:
+        _write_json(fid_json, fname)
+    else:
+        raise ValueError('"%s" already exists. Please set overwrite to'
+                         ' True.' % fname)
 
     return fname
 
 
-def _channel_json(raw, task, manufacturer, fname, kind, verbose):
+def _channel_json(raw, task, manufacturer, fname, kind, verbose, overwrite):
 
     sfreq = raw.info['sfreq']
     powerlinefrequency = raw.info.get('line_freq', None)
@@ -231,14 +247,18 @@ def _channel_json(raw, task, manufacturer, fname, kind, verbose):
     ch_info_json += ch_info_ch_counts
     ch_info_json = OrderedDict(ch_info_json)
 
-    _write_json(ch_info_json, fname, verbose=verbose)
+    if not os.path.exists(fname) or overwrite is True:
+        _write_json(ch_info_json, fname, verbose=verbose)
+    else:
+        raise ValueError('"%s" already exists. Please set overwrite to'
+                         ' True.' % fname)
     return fname
 
 
 def raw_to_bids(subject_id, task, raw_file, output_path, session_id=None,
                 acquisition=None, run=None, kind='meg', events_data=None,
                 event_id=None, hpi=None, electrode=None, hsp=None, config=None,
-                overwrite=False, verbose=True):
+                overwrite=True, verbose=True):
     """Walk over a folder of files and create bids compatible folder.
 
     Parameters
@@ -304,14 +324,12 @@ def raw_to_bids(subject_id, task, raw_file, output_path, session_id=None,
                          'got %s' % type(raw_file))
     data_path = make_bids_folders(subject=subject_id, session=session_id,
                                   kind=kind, root=output_path,
-                                  overwrite=overwrite,
                                   verbose=verbose)
     if session_id is None:
         ses_path = data_path
     else:
         ses_path = make_bids_folders(subject=subject_id, session=session_id,
                                      root=output_path,
-                                     overwrite=False,
                                      verbose=verbose)
 
     # create filenames
@@ -349,16 +367,16 @@ def raw_to_bids(subject_id, task, raw_file, output_path, session_id=None,
     if kind == 'meg':
         _scans_tsv(raw, raw_file_bids, scans_fname, verbose)
         _coordsystem_json(raw, unit, orient, manufacturer, coordsystem_fname,
-                          verbose)
+                          verbose, overwrite)
 
     make_dataset_description(output_path, name=" ",
                              verbose=verbose)
-    _channel_json(raw, task, manufacturer, data_meta_fname, kind, verbose)
-    _channels_tsv(raw, channels_fname, verbose)
+    _channel_json(raw, task, manufacturer, data_meta_fname, kind, verbose, overwrite)
+    _channels_tsv(raw, channels_fname, verbose, overwrite)
 
     events = _read_events(events_data, raw)
     if len(events) > 0:
-        _events_tsv(events, raw, events_tsv_fname, event_id, verbose)
+        _events_tsv(events, raw, events_tsv_fname, event_id, verbose, overwrite)
 
     # for FIF, we need to re-save the file to fix the file pointer
     # for files with multiple parts
@@ -372,14 +390,6 @@ def raw_to_bids(subject_id, task, raw_file, output_path, session_id=None,
             else:
                 raise ValueError('"%s" already exists. Please set overwrite to'
                                  ' True.' % raw_file_bids)
-        """
-        else:
-            # ensure the sub-folder exists
-            if not os.path.exists(os.path.dirname(raw_file_bids)):
-                os.makedirs(os.path.dirname(raw_file_bids))
-            # copy the file
-            sh.copyfile(raw.filenames[0], raw_file_bids)
-        """
 
     return output_path
 

@@ -3,15 +3,20 @@ import os
 import errno
 from collections import OrderedDict
 import json
+import shutil as sh
 from mne.externals.six import string_types
 from .config import BIDS_VERSION
 
 
-def _mkdir_p(path, verbose=False):
+def _mkdir_p(path, overwrite=False, verbose=False):
     """Create a directory, making parent directories as needed.
 
     From stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     """
+    if overwrite is True and os.path.isdir(path):
+        sh.rmtree(path)
+        if verbose is True:
+            print('Overwriting path: %s' % path)
 
     try:
         os.makedirs(path)
@@ -105,7 +110,7 @@ def make_bids_filename(subject=None, session=None, task=None,
 
 
 def make_bids_folders(subject, session=None, kind=None, root=None,
-                      make_dir=True, overwrite=True, verbose=False):
+                      make_dir=True, overwrite=False, verbose=False):
     """Create a BIDS folder hierarchy.
 
     This creates a hierarchy of folders *within* a BIDS dataset. You should
@@ -158,7 +163,7 @@ def make_bids_folders(subject, session=None, kind=None, root=None,
         path = os.path.join(root, path)
 
     if make_dir is True:
-        _mkdir_p(path, verbose=verbose)
+        _mkdir_p(path, overwrite=overwrite, verbose=verbose)
     return path
 
 
