@@ -35,14 +35,6 @@ shell = False
 if os.name == 'nt':
     shell = True
 
-# for windows, shell = True is needed
-# to call npm, bids-validator etc.
-#     see: https://stackoverflow.com/questions/
-#          28891053/run-npm-commands-using-python-subprocess
-shell = False
-if os.name == 'nt':
-    shell = True
-
 
 def test_fif():
     """
