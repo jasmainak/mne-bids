@@ -23,13 +23,8 @@ def _from_tsv(fname, dtypes=None):
     column_names = data[0, :]
     info = data[1:, :]
     data_dict = OrderedDict()
-    if isinstance(dtypes, (list, tuple)):
-        if len(dtypes) == info.shape[1]:
-            for i, name in enumerate(column_names):
-                data_dict[name] = info[:, i].astype(dtypes[i]).tolist()
-    else:
-        for i, name in enumerate(column_names):
-            data_dict[name] = info[:, i].tolist()
+    for i, name in enumerate(column_names):
+        data_dict[name] = info[1:, i].tolist()
     return data_dict
 
 
