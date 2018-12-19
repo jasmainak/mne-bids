@@ -192,7 +192,7 @@ sphinx_gallery_conf = {
     },
     'binder': {
         # Required keys
-        'org': 'choldgraf',
+        'org': 'jasmainak',
         'repo': 'mne-bids',
         'branch': 'gh-pages',  # Can be any branch, tag, or commit hash. Use a branch that hosts your docs.
         'binderhub_url': 'https://mybinder.org',  # Any URL of a binder server. Must be full URL (e.g. https://mybinder.org).
